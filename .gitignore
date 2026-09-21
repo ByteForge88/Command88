@@ -1,0 +1,4 @@
+build.php
+built_tests/*
+examples/*
+tests/*
