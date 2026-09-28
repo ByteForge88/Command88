@@ -75,7 +75,7 @@ class Command88 {
 
     public static function getInstance(PluginBase $plugin) : self{
         if (!self::isRegistered($plugin)) {
-            throw new \LogicException('Call Command88::register($this) before creating commands.');
+            throw new \LogicException('Call Command88::init($this) before creating commands.');
         }
         
         return self::$instances[spl_object_id($plugin)];
