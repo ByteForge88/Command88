@@ -21,15 +21,18 @@ use pocketmine\scheduler\TaskHandler;
 class Command88 {
 
     private static array $instances = [];
+    
     private EventListener $listener;
+    
     private bool $active = true;
+    
     private ?TaskHandler $refreshTask = null;
 
     private function __construct(private PluginBase $plugin){
         $this->listener = new EventListener($this);
     }
 
-    public static function register(PluginBase $plugin) : self{
+    public static function init(PluginBase $plugin) : self{
         if (!$plugin->isEnabled()) {
             throw new \LogicException('Call Command88::register($this) from onEnable().');
         }
@@ -95,7 +98,7 @@ class Command88 {
         $this->refresh();
     }
 
-    public function registerCommands(array $commands) : void{
+    public function registerAllCommands(array $commands) : void{
         foreach ($commands as $command) {
             $this->registerCommand($command);
         }
@@ -110,6 +113,12 @@ class Command88 {
         
         $this->plugin->getServer()->getCommandMap()->unregister($command);
         $this->refresh();
+    }
+
+    public function unregisterAllCommands(array $command) : void{
+        foreach ($commands as $command) {
+            $this->unregisterCommand($command);
+        }
     }
 
     private function assertActive() : void{
