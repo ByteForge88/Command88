@@ -1,5 +1,23 @@
 <?php
 
+/**
+ *
+ *       ____                                          _  ___   ___  
+ *      / ___|___  _ __ ___  _ __ ___   __ _ _ __   __| |( _ ) ( _ ) 
+ *     | |   / _ \| '_ ` _ \| '_ ` _ \ / _` | '_ \ / _` |/ _ \ / _ \ 
+ *     | |__| (_) | | | | | | | | | | | (_| | | | | (_| | (_) | (_) |
+ *      \____\___/|_| |_| |_|_| |_| |_|\__,_|_| |_|\__,_|\___/ \___/ 
+ *
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * @author ByteForge88
+ *
+ **/
+
 declare(strict_types=1);
 
 namespace byteforge88\command88;
@@ -24,33 +42,37 @@ use byteforge88\command88\argument\BaseArgument;
 use byteforge88\command88\argument\ArgumentList;
 use byteforge88\command88\argument\ArgumentException;
 
-abstract class BaseCommand extends Command implements PluginOwned {
+abstract class BaseCommand extends Command implements PluginOwned{
     
     private ArgumentList $arguments;
     
     private array $subCommands = [];
     
     private array $subNames = [];
+    
     private ?self $parent = null;
+    
     private bool $configuring = true;
+    
     private bool $playerOnly = false;
+    
     private bool $customUsage = false;
 
     final public function __construct(
         protected PluginBase $plugin,
         string $name,
-        string $description = '',
+        string $description = "",
         array $aliases = []
-    ) {
+    ){
         Command88::getInstance($plugin);
         self::checkName($name);
         parent::__construct($name, $description, null, $aliases);
-        $this->setPermission('command88.use');
+        $this->setPermission("command88.use");
         $this->arguments = new ArgumentList();
         
-        try {
+        try{
             Argument::within($this, function() : void{ $this->configure(); });
-        } finally {
+        }finally{
             $this->configuring = false;
         }
     }
@@ -70,13 +92,13 @@ abstract class BaseCommand extends Command implements PluginOwned {
     final public function getSubCommands() : array{ return $this->subCommands; }
 
     private static function checkName(string $name) : void{
-        if (preg_match('/^[a-z][a-z0-9_-]*$/D', $name) !== 1) {
-            throw new \InvalidArgumentException('Use lowercase command names and aliases.');
+        if(preg_match('/^[a-z][a-z0-9_-]*$/D', $name) !== 1){
+            throw new \InvalidArgumentException("Use lowercase command names and aliases!");
         }
     }
 
     public function setAliases(array $aliases) : void{
-        foreach ($aliases as $alias) {
+        foreach($aliases as $alias){
             self::checkName($alias);
         }
         
@@ -84,8 +106,8 @@ abstract class BaseCommand extends Command implements PluginOwned {
     }
 
     private function checkConfiguring() : void{
-        if (!$this->configuring) {
-            throw new \LogicException('Define arguments and subcommands inside configure().');
+        if(!$this->configuring){
+            throw new \LogicException("Define arguments and subcommands inside configure()");
         }
     }
 
@@ -97,15 +119,15 @@ abstract class BaseCommand extends Command implements PluginOwned {
     final public function registerArgument(int $position, BaseArgument $argument) : void{
         $this->checkConfiguring();
         
-         if ($this->subCommands !== []) {
-             throw new \LogicException('Use arguments or subcommands on a node, not both.');
+         if($this->subCommands !== []){
+             throw new \LogicException("Use arguments or subcommands on a node, not both!");
          }
         
         $this->arguments->register($position, $argument);
     }
 
     final public function removeArgument(int $position) : bool{
-        if (!$this->arguments->remove($position)) {
+        if(!$this->arguments->remove($position)){
             return false;
         }
         
@@ -114,7 +136,7 @@ abstract class BaseCommand extends Command implements PluginOwned {
     }
 
     final public function removeAllArguments() : void{
-        if ($this->arguments->isEmpty()) {
+        if($this->arguments->isEmpty()){
             return;
         }
         
@@ -125,11 +147,11 @@ abstract class BaseCommand extends Command implements PluginOwned {
     private function argumentsChanged() : void{
         $root = $this;
         
-        while ($root->parent !== null) {
+        while($root->parent !== null){
             $root = $root->parent;
         }
         
-        if (!$this->configuring && $root->isRegistered() && Command88::isRegistered($this->plugin)) {
+        if(!$this->configuring && $root->isRegistered() && Command88::isRegistered($this->plugin)){
             Command88::getInstance($this->plugin)->refresh();
         }
     }
@@ -141,23 +163,23 @@ abstract class BaseCommand extends Command implements PluginOwned {
     final protected function addSubCommand(BaseCommand $command) : void{
         $this->checkConfiguring();
         
-        if ($command === $this || $command->parent !== null || $command->isRegistered() || $command->configuring || $command->plugin !== $this->plugin) {
-            throw new \LogicException('Use a fresh subcommand belonging to the same plugin.');
+        if($command === $this || $command->parent !== null || $command->isRegistered() || $command->configuring || $command->plugin !== $this->plugin){
+            throw new \LogicException("Use a fresh subcommand belonging to the same plugin!");
         }
         
         if (!$this->arguments->isEmpty()) {
-            throw new \LogicException('Use arguments or subcommands on a node, not both.');
+            throw new \LogicException("Use arguments or subcommands on a node, not both!");
         }
         
         $names = array_unique([$command->getName(), ...$command->getAliases()]);
         
-        foreach ($names as $name) {
-            if (isset($this->subNames[$name])) {
-                throw new \LogicException("Duplicate subcommand: $name");
+        foreach($names as $name){
+            if(isset($this->subNames[$name])){
+                throw new \LogicException("Duplicate subcommand: {$name}");
             }
         }
         
-        foreach ($names as $name) {
+        foreach($names as $name){
             $this->subNames[$name] = $command;
         }
         
@@ -171,49 +193,49 @@ abstract class BaseCommand extends Command implements PluginOwned {
     }
 
     public function getUsage() : Translatable|string{
-        if (!$this->customUsage) {
+        if(!$this->customUsage){
             return $this->defaultUsage($this->getLabel());
         }
         
         $usage = parent::getUsage();
-        return is_string($usage) ? str_replace('{command}', $this->getLabel(), $usage) : $usage;
+        return is_string($usage) ? str_replace("{command}", $this->getLabel(), $usage) : $usage;
     }
 
     private function defaultUsage(string $label) : string{
-        return '/' . $label;
+        return "/" . $label;
     }
 
     final public function usage(CommandSender $sender, ?string $label = null) : string{
         $label ??= $this->getLabel();
         
-        if (!$this->customUsage) {
+        if(!$this->customUsage){
             return $this->defaultUsage($label);
         }
         
         $usage = parent::getUsage();
         
-        if ($usage instanceof Translatable) {
+        if($usage instanceof Translatable){
             $usage = $sender->getLanguage()->translate($usage);
         }
         
-        return str_replace('{command}', $label, $usage);
+        return str_replace("{command}", $label, $usage);
     }
 
     final public function sendUsage(CommandSender $sender, ?string $label = null) : void{
-        $sender->sendMessage(Messages::get('usage', ['usage' => $this->usage($sender, $label)]));
+        $sender->sendMessage(Messages::get("usage", ["usage" => $this->usage($sender, $label)]));
     }
 
     public function testPermission(CommandSender $target, ?string $permission = null) : bool{
-        if ($this->testPermissionSilent($target, $permission)) {
+        if($this->testPermissionSilent($target, $permission)){
             return true;
         }
         
         $message = $this->getPermissionMessage();
         
-        if ($message !== '') {
-            $target->sendMessage($message === null ? Messages::get('no-permission') : strtr($message, [
-                '<permission>' => $permission ?? implode(';', $this->getPermissions()),
-                '{permission}' => $permission ?? implode(';', $this->getPermissions())
+        if($message !== ""){
+            $target->sendMessage($message === null ? Messages::get("no-permission") : strtr($message, [
+                "<permission>" => $permission ?? implode(";", $this->getPermissions()),
+                "{permission}" => $permission ?? implode(";", $this->getPermissions())
             ]));
         }
         
@@ -221,35 +243,35 @@ abstract class BaseCommand extends Command implements PluginOwned {
     }
 
     final public function execute(CommandSender $sender, string $commandLabel, array $args) : bool{
-        if (!Command88::isRegistered($this->plugin)) {
+        if(!Command88::isRegistered($this->plugin)){
             return false;
         }
         
-        if (!$this->testPermission($sender)) {
+        if(!$this->testPermission($sender)){
             return true;
         }
         
-        if ($this->playerOnly && !$sender instanceof Player) {
-            $sender->sendMessage(Messages::get('players-only'));
+        if($this->playerOnly && !$sender instanceof Player){
+            $sender->sendMessage(Messages::get("players-only"));
             return true;
         }
         
-        if ($this->subCommands !== [] && $args !== []) {
+        if($this->subCommands !== [] && $args !== []){
             $name = strtolower(array_shift($args));
             
-            if (!isset($this->subNames[$name])) {
-                $sender->sendMessage(Messages::get('error', ['error' => Messages::get('unknown-subcommand', ['subcommand' => $name])]));
+            if(!isset($this->subNames[$name])){
+                $sender->sendMessage(Messages::get("error", ["error" => Messages::get("unknown-subcommand", ["subcommand" => $name])]));
                 $this->sendUsage($sender, $commandLabel);
                 return true;
             }
             
-            return $this->subNames[$name]->execute($sender, $commandLabel . ' ' . $name, $args);
+            return $this->subNames[$name]->execute($sender, $commandLabel . " " . $name, $args);
         }
         
-        try {
+        try{
             $values = $this->arguments->parse($args, $sender);
-        } catch (ArgumentException $e) {
-            $sender->sendMessage(Messages::get('error', ['error' => $e->getMessage()]));
+        }catch(ArgumentException $e){
+            $sender->sendMessage(Messages::get("error", ["error" => $e->getMessage()]));
             $this->sendUsage($sender, $commandLabel);
             return true;
         }
@@ -259,12 +281,12 @@ abstract class BaseCommand extends Command implements PluginOwned {
     }
 
     private function visibleTo(array $viewers) : bool{
-        if (!Command88::isRegistered($this->plugin)) {
+        if(!Command88::isRegistered($this->plugin)){
             return false;
         }
         
-        foreach ($viewers as $viewer) {
-            if (!$this->testPermissionSilent($viewer) || ($this->playerOnly && !$viewer instanceof Player)) {
+        foreach($viewers as $viewer){
+            if(!$this->testPermissionSilent($viewer) || ($this->playerOnly && !$viewer instanceof Player)){
                 return false;
             }
         }
@@ -273,27 +295,27 @@ abstract class BaseCommand extends Command implements PluginOwned {
     }
 
     final public function getOverloads(array $viewers, string $scope, array $prefix = [], ?array $playerNames = null) : array{
-        if (!$this->visibleTo($viewers)) {
+        if(!$this->visibleTo($viewers)){
             return [];
         }
         
         $playerNames ??= [];
         
-        if ($this->subCommands === []) {
+        if($this->subCommands === []){
             return $this->arguments->overloads($scope, $prefix, $playerNames);
         }
         
         $overloads = [new CommandOverload(false, $prefix)];
         
-        foreach ($this->subCommands as $index => $sub) {
-            $childScope = $scope . '_' . $index;
+        foreach($this->subCommands as $index => $sub){
+            $childScope = $scope . "_" . $index;
             $description = $sub->getDescription();
             
-            if ($description instanceof Translatable) {
+            if($description instanceof Translatable){
                 $description = $viewers === [] ? $sub->getName() : $viewers[0]->getLanguage()->translate($description);
             }
             
-            $label = trim($description) !== '' ? $description : $sub->getName();
+            $label = trim($description) !== "" ? $description : $sub->getName();
             $literal = CommandParameter::enum($label, new CommandHardEnum($label, array_values(array_unique([$sub->getName(), ...$sub->getAliases()]))), CommandParameter::FLAG_FORCE_COLLAPSE_ENUM);
             array_push($overloads, ...$sub->getOverloads($viewers, $childScope, [...$prefix, $literal], $playerNames));
         }

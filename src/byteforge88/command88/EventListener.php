@@ -1,5 +1,23 @@
 <?php
 
+/**
+ *
+ *       ____                                          _  ___   ___  
+ *      / ___|___  _ __ ___  _ __ ___   __ _ _ __   __| |( _ ) ( _ ) 
+ *     | |   / _ \| '_ ` _ \| '_ ` _ \ / _` | '_ \ / _` |/ _ \ / _ \ 
+ *     | |__| (_) | | | | | | | | | | | (_| | | | | (_| | (_) | (_) |
+ *      \____\___/|_| |_| |_|_| |_| |_|\__,_|_| |_|\__,_|\___/ \___/ 
+ *
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * @author ByteForge88
+ *
+ **/
+
 declare(strict_types=1);
 
 namespace byteforge88\command88;
@@ -14,32 +32,30 @@ use pocketmine\network\mcpe\protocol\serializer\AvailableCommandsPacketDisassemb
 
 class EventListener implements Listener{
     
-    public function __construct(private Command88 $plugin) {
-        
-    }
+    public function __construct(private Command88 $plugin){}
 
     /** @priority HIGH */
     public function onCommandData(DataPacketSendEvent $event) : void{
         $viewers = [];
         
-        foreach ($event->getTargets() as $session) {
+        foreach($event->getTargets() as $session){
             $player = $session->getPlayer();
             
-            if ($player === null) {
+            if($player === null){
                 return;
             }
             
             $viewers[] = $player;
         }
         
-        if ($viewers === []) {
+        if($viewers === []){
             return;
         }
         
         $packets = $event->getPackets();
         
-        foreach ($packets as $index => $packet) {
-            if (!$packet instanceof AvailableCommandsPacket) {
+        foreach($packets as $index => $packet){
+            if(!$packet instanceof AvailableCommandsPacket){
                 continue;
             }
             
@@ -47,14 +63,14 @@ class EventListener implements Listener{
             $commands = [];
             $changed = false;
             
-            foreach ($decoded->commandData as $data) {
+            foreach($decoded->commandData as $data){
                 $command = $this->plugin->getPlugin()->getServer()->getCommandMap()->getCommand($data->getName());
                 
-                if ($command instanceof BaseCommand && $command->getOwningPlugin() === $this->plugin->getPlugin()) {
+                if($command instanceof BaseCommand && $command->getOwningPlugin() === $this->plugin->getPlugin()){
                     $changed = true;
-                    $overloads = $command->getOverloads($viewers, 'Command88_' . $data->getName());
+                    $overloads = $command->getOverloads($viewers, "Command88_" . $data->getName());
                     
-                    if ($overloads === []) {
+                    if($overloads === []){
                         continue;
                     }
                     
@@ -64,7 +80,7 @@ class EventListener implements Listener{
                 $commands[] = $data;
             }
             
-            if ($changed) {
+            if($changed){
                 $replacement = AvailableCommandsPacketAssembler::assemble($commands, array_values($decoded->unusedHardEnums), array_values($decoded->unusedSoftEnums));
                 $replacement->senderSubId = $packet->senderSubId;
                 $replacement->recipientSubId = $packet->recipientSubId;
