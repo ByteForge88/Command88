@@ -14,11 +14,11 @@ class BooleanArgument extends EnumArgument{
 
     public function __construct(
         string $name,
-        string $true_value = "true",
+        protected string $true_value = "true",
         string $false_value = "false",
         bool $optional = false
     ){
-        parent::__construct($name, [&true_value, $false_value], $optional);
+        parent::__construct($name, [$true_value, $false_value], $optional);
     }
 
     protected function networkTypeName() : string{ return "bool"; }
