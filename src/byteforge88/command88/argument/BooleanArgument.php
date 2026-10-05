@@ -9,13 +9,21 @@ use pocketmine\command\CommandSender;
 use byteforge88\command88\data\CommandEnum;
 
 class BooleanArgument extends EnumArgument{
-    
-    public function __construct(string $name, array|CommandEnum $toggle = ["true", "false"], bool $optional = false){
-        parent::__construct($name, $toggle, $optional);
+
+    public string $true_value;
+
+    public function __construct(
+        string $name,
+        string $true_value = "true",
+        string $false_value = "false",
+        bool $optional = false
+    ){
+        parent::__construct($name, [&true_value, $false_value], $optional);
     }
-    
+
     protected function networkTypeName() : string{ return "bool"; }
-    
-    public function parse(string $value, CommandSender $sender) : mixed{ return parent::parse($value, $sender) === "true"; }
-    
+
+    public function parse(string $value, CommandSender $sender) : bool{
+        return parent::parse($value, $sender) === $this->true_value;
+    }
 }
