@@ -1,0 +1,15 @@
+{
+  "name": "byteforge88/command88",
+  "description": "A command framework virion for PocketMine-MP.",
+  "type": "library",
+  "version": "1.0.0",
+  "license": "LGPL-3.0",
+  "autoload": {
+    "psr-4": {
+      "byteforge88\\command88\\": "src/byteforge88/command88/"
+    }
+  },
+  "require": {
+    "axolotl-pm/pocketmine-mp": "^5.49.1"
+  }
+}
